@@ -1,10 +1,6 @@
 @import url(font-awesome.min.css);
 @import url("https://fonts.googleapis.com/css?family=Raleway:200,700|Source+Sans+Pro:300,600,300italic,600italic");
 
-/*
-Solid thanks to Skeleton Framework, HTML5Shiv, JQuery, SASS & HTML5UP for the pre-designed boxes & more!
-*/
-
 /* Reset */
 
 	html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
@@ -1615,7 +1611,7 @@ Solid thanks to Skeleton Framework, HTML5Shiv, JQuery, SASS & HTML5UP for the pr
 	@media screen and (max-width: 640px) {
 
 		html, body {
-			min-width: 640px;
+			min-width: 320px;
 		}
 
 	}
@@ -1649,11 +1645,10 @@ Solid thanks to Skeleton Framework, HTML5Shiv, JQuery, SASS & HTML5UP for the pr
 		line-height: 1.65;
 	}
 
-	}
 		@media screen and (max-width: 1680px) {
 
 			body, input, select, textarea {
-				font-size: 14pt;
+				font-size: 13pt;
 			}
 
 		}
@@ -1763,10 +1758,8 @@ Solid thanks to Skeleton Framework, HTML5Shiv, JQuery, SASS & HTML5UP for the pr
 	}
 
 	p {
-
-		margin: 0 0 3em 0;
+		margin: 0 0 2em 0;
 	}
-
 
 	h1, h2, h3, h4, h5, h6 {
 		color: #ffffff;
@@ -2371,12 +2364,12 @@ Solid thanks to Skeleton Framework, HTML5Shiv, JQuery, SASS & HTML5UP for the pr
 
 		ul.contact {
 			list-style: none;
-			padding: 10;
+			padding: 0;
 		}
 
 			ul.contact li {
 				text-decoration: none;
-				margin: 2.3em 0 0 0;
+				margin: 2.5em 0 0 0;
 				padding: 0 0 0 3.25em;
 				position: relative;
 			}
@@ -2656,7 +2649,7 @@ Solid thanks to Skeleton Framework, HTML5Shiv, JQuery, SASS & HTML5UP for the pr
 	}
 
 		.features article {
-			padding: 1.75em 1.75em 0em 1.75em ;
+			padding: 1.75em 1.75em 0.1em 1.75em ;
 			background-color: #353849;
 			border-radius: 5px;
 			margin: 1.5em 3em 1.5em 0;
@@ -3200,7 +3193,7 @@ Solid thanks to Skeleton Framework, HTML5Shiv, JQuery, SASS & HTML5UP for the pr
 /* Wrapper */
 
 	#wrapper > header {
-		padding: 5em 0 .5em 0 ;
+		padding: 11em 0 2.25em 0 ;
 	}
 
 		#wrapper > header .inner {
@@ -3558,7 +3551,7 @@ Solid thanks to Skeleton Framework, HTML5Shiv, JQuery, SASS & HTML5UP for the pr
 /* Footer */
 
 	#footer .inner {
-		padding: 1em 0 0em 0 ;
+		padding: 5em 0 3em 0 ;
 		display: -moz-flex;
 		display: -webkit-flex;
 		display: -ms-flex;
