@@ -1649,7 +1649,7 @@
 		body, input, select, textarea {
 			font-size: 14pt;
 		}
-			
+
 		@media screen and (max-width: 1680px) {
 
 			body, input, select, textarea {
@@ -2369,12 +2369,12 @@
 
 		ul.contact {
 			list-style: none;
-			padding: 0;
+			padding: 5;
 		}
 
 			ul.contact li {
 				text-decoration: none;
-				margin: 2.5em 0 0 0;
+				margin: 2.3em 0 0 3em;
 				padding: 0 0 0 3.25em;
 				position: relative;
 			}
@@ -2732,7 +2732,7 @@
 		line-height: 3.5em;
 		padding: 0 1.25em;
 		position: fixed;
-		top: 0;
+		top: 10;
 		width: 100%;
 		z-index: 10000;
 	}
@@ -3198,7 +3198,7 @@
 /* Wrapper */
 
 	#wrapper > header {
-		padding: 11em 0 2.25em 0 ;
+		padding: 5em 0 1em 0 ;
 	}
 
 		#wrapper > header .inner {
@@ -3556,7 +3556,7 @@
 /* Footer */
 
 	#footer .inner {
-		padding: 5em 0 3em 0 ;
+		padding: 1em 0 1em 0 ;
 		display: -moz-flex;
 		display: -webkit-flex;
 		display: -ms-flex;
