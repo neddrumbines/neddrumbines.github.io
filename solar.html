@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Solar Monitor — Bimby</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg:       #0E1117;
+  --surface:  #161B25;
+  --card:     #1C2333;
+  --border:   #252D3E;
+  --text:     #E2E8F0;
+  --muted:    #6B7A96;
+  --green:    #34D399;
+  --green-bg: rgba(52,211,153,0.09);
+  --amber:    #FBBF24;
+  --amber-bg: rgba(251,191,36,0.09);
+  --red:      #F87171;
+  --red-bg:   rgba(248,113,113,0.09);
+  --blue:     #60A5FA;
+  --blue-bg:  rgba(96,165,250,0.09);
+  --teal:     #2DD4BF;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.4;
+  width: 100%;
+  padding: 10px 8px 28px;
+}
+
+/* ── HEADER ── */
+.hdr {
+  background: linear-gradient(135deg, #0C2248 0%, #15355F 60%, #0C3545 100%);
+  border: 1px solid #1E3A64;
+  border-radius: 10px;
+  padding: 14px 14px 12px;
+  margin-bottom: 10px;
+}
+.hdr h1 {
+  font-family: var(--mono);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.02em;
+  margin-bottom: 3px;
+}
+.hdr .sub { font-family: var(--mono); font-size: 10.5px; color: #6A9AC4; }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.tg  { color: var(--teal);  border-color: rgba(45,212,191,0.35); background: rgba(45,212,191,0.07); }
+.tb  { color: var(--blue);  border-color: rgba(96,165,250,0.35); background: var(--blue-bg); }
+.tgr { color: var(--green); border-color: rgba(52,211,153,0.35); background: var(--green-bg); }
+.ta  { color: var(--amber); border-color: rgba(251,191,36,0.35); background: var(--amber-bg); }
+
+/* ── SECTION ── */
+.sec { margin-top: 12px; }
+.sec-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
+  padding-left: 1px;
+}
+.sec-label em { color: var(--teal); font-style: normal; margin-right: 5px; }
+
+/* ── CARD ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.card + .card { margin-top: 7px; }
+
+/* ── SPEC ROWS ── */
+.srow {
+  display: flex;
+  align-items: baseline;
+  padding: 5px 11px;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.srow:last-child { border-bottom: none; }
+.srow:nth-child(even) { background: rgba(255,255,255,0.016); }
+.sk { font-size: 10.5px; color: var(--muted); width: 115px; flex-shrink: 0; }
+.sv { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--text); flex: 1; }
+.sv.g { color: var(--green); }
+.sv.a { color: var(--amber); }
+.sv.t { color: var(--teal); }
+.aside { font-family: var(--sans); font-size: 9.5px; color: var(--muted); font-weight: 400; }
+
+/* ── TABLES ── */
+table { width: 100%; border-collapse: collapse; }
+th {
+  background: #111827;
+  color: #7BA7D4;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 6px 7px;
+  text-align: center;
+  border-bottom: 1px solid #1E3A64;
+}
+th:first-child { text-align: left; }
+td {
+  padding: 5px 7px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  vertical-align: middle;
+  font-size: 11px;
+  line-height: 1.3;
+}
+td:first-child { text-align: left; }
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) td { background: rgba(255,255,255,0.016); }
+.lbl { color: var(--muted); font-size: 10.5px; }
+.mn  { font-family: var(--mono); font-weight: 600; }
+.g   { color: var(--green); font-family: var(--mono); font-weight: 600; }
+.a   { color: var(--amber); font-family: var(--mono); font-weight: 600; }
+.r   { color: var(--red);   font-family: var(--mono); font-weight: 600; }
+.t   { color: var(--teal);  font-family: var(--mono); font-weight: 600; }
+.b   { color: var(--blue);  font-family: var(--mono); font-weight: 600; }
+.dim { color: var(--muted); font-size: 9.5px; font-family: var(--sans); font-weight: 400; }
+
+/* ── NOTE ── */
+.note {
+  font-size: 10px;
+  color: var(--muted);
+  padding: 6px 11px;
+  border-top: 1px solid var(--border);
+  line-height: 1.45;
+  font-style: italic;
+}
+.note b { color: var(--amber); font-style: normal; }
+
+/* ── POWER FLOW CARDS ── */
+.pf-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px; }
+.pf-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 9px;
+}
+.pf-card.full { grid-column: span 2; }
+.pf-day {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border);
+}
+.pf-day.s  { color: var(--amber); }
+.pf-day.av { color: var(--green); }
+.pf-day.cl { color: #94A3B8; }
+.pf-day.ra { color: var(--blue); }
+.pf-day.ni { color: #C084FC; }
+.pf-row { display: flex; justify-content: space-between; align-items: center; padding: 1.5px 0; }
+.pf-k { font-size: 10px; color: var(--muted); }
+.pf-v { font-family: var(--mono); font-size: 11px; font-weight: 600; }
+.pf-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; }
+
+/* ── CHECKPOINT BLOCKS ── */
+.cp {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 7px;
+}
+.cp-head {
+  padding: 8px 12px;
+  border-bottom: 1px solid;
+}
+.cp-head.gr { background: rgba(52,211,153,0.1);  border-color: rgba(52,211,153,0.2); }
+.cp-head.am { background: rgba(251,191,36,0.1);  border-color: rgba(251,191,36,0.2); }
+.cp-head.bl { background: rgba(96,165,250,0.1);  border-color: rgba(96,165,250,0.2); }
+.cp-time { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+.cp-time.g { color: var(--green); }
+.cp-time.a { color: var(--amber); }
+.cp-time.b { color: var(--blue); }
+.cp-sub { font-size: 10px; color: var(--muted); margin-top: 1px; }
+
+.cp-row {
+  display: grid;
+  grid-template-columns: 95px 68px 1fr;
+  gap: 6px;
+  padding: 6px 11px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.cp-row:last-child { border-bottom: none; }
+.cp-row:nth-child(even) { background: rgba(255,255,255,0.016); }
+.cp-soc { font-family: var(--mono); font-size: 11px; font-weight: 600; line-height: 1.3; }
+.badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-align: center;
+  padding: 3px 4px;
+  border-radius: 4px;
+  line-height: 1.2;
+}
+.badge.ok  { color: var(--green); background: var(--green-bg); }
+.badge.w   { color: var(--amber); background: var(--amber-bg); }
+.badge.bad { color: var(--red);   background: var(--red-bg); }
+.cp-action { font-size: 10.5px; color: var(--muted); line-height: 1.35; }
+.cp-action b { color: var(--text); font-weight: 600; }
+
+/* ── FLAGS ── */
+.flag {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 8px;
+  padding: 8px 11px;
+  border-bottom: 1px solid var(--border);
+  align-items: start;
+}
+.flag:last-child { border-bottom: none; }
+.fi { font-size: 15px; padding-top: 1px; }
+.fw { font-size: 11px; font-weight: 600; margin-bottom: 2px; }
+.fy { font-size: 10.5px; color: var(--muted); margin-bottom: 3px; line-height: 1.35; }
+.fd { font-size: 10.5px; color: var(--red); font-weight: 600; }
+
+/* ── DISCIPLINE ── */
+.disc-hdr {
+  display: grid;
+  grid-template-columns: 1fr 58px 58px;
+  gap: 4px;
+  padding: 5px 11px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
+}
+.disc-hdr span { font-size: 9.5px; color: var(--muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.disc-hdr span:not(:first-child) { text-align: right; }
+.disc-row {
+  display: grid;
+  grid-template-columns: 1fr 58px 58px;
+  gap: 4px;
+  padding: 6px 11px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.disc-row:last-child { border-bottom: none; }
+.disc-row:nth-child(even) { background: rgba(255,255,255,0.016); }
+.disc-row.total { background: rgba(52,211,153,0.06); }
+.da { font-size: 11px; color: var(--text); }
+.da.bold { font-weight: 700; }
+.dn { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--green); text-align: right; }
+.df { font-family: var(--mono); font-size: 10.5px; color: var(--green); text-align: right; }
+.df.dim { color: var(--muted); font-size: 9.5px; }
+
+/* ── FOOTER ── */
+.footer {
+  margin-top: 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.fl { font-family: var(--mono); font-size: 9.5px; color: var(--muted); }
+.fr { font-family: var(--mono); font-size: 9px; color: #2A3F5A; text-align: right; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <h1>☀ SOLARMAN SMART — FIELD REFERENCE</h1>
+  <div class="sub">Bimby · Virac, Catanduanes · v3.6</div>
+  <div class="tags">
+    <span class="tag tg">10× OSDA 580W bifacial</span>
+    <span class="tag tb">SRNE HESP4860S100-H</span>
+    <span class="tag tgr">SR-SE15B 14.33 kWh</span>
+    <span class="tag ta">FICELCO ₱16.77/kWh</span>
+  </div>
+</div>
+
+<!-- 01 SPECS -->
+<div class="sec">
+  <div class="sec-label"><em>01</em>YOUR SYSTEM AT A GLANCE</div>
+  <div class="card">
+    <div class="srow"><span class="sk">Effective Peak</span><span class="sv t">4.84 kW <span class="aside">(5.8 kWp × 0.78 × 1.07 bifacial)</span></span></div>
+    <div class="srow"><span class="sk">Battery Total</span><span class="sv g">14.33 kWh <span class="aside">51.2V × 280Ah LFP</span></span></div>
+    <div class="srow"><span class="sk">Battery Usable</span><span class="sv g">11.47 kWh <span class="aside">(20–100% SOC)</span></span></div>
+    <div class="srow"><span class="sk">Battery Floor</span><span class="sv a">20% SOC = 2.87 kWh <span class="aside">← BMS hard stop</span></span></div>
+    <div class="srow"><span class="sk">Daily Load</span><span class="sv">~19.75 kWh/day <span class="aside">B-corrected</span></span></div>
+    <div class="srow"><span class="sk">Overnight Drain</span><span class="sv">11.27 kWh <span class="aside">4.01 eve + 7.26 sleep</span></span></div>
+    <div class="srow"><span class="sk">Target Sunrise SOC</span><span class="sv a">~21% (3.06 kWh) <span class="aside">← by design, not a fault</span></span></div>
+  </div>
+</div>
+
+<!-- 02 POWER FLOW -->
+<div class="sec">
+  <div class="sec-label"><em>02</em>POWER FLOW SCREEN — LIVE ARROWS (12–1 PM)</div>
+  <div class="card">
+    <div class="pf-wrap">
+      <div class="pf-card">
+        <div class="pf-day s">☀ SUNNY</div>
+        <div class="pf-row"><span class="pf-k">PV</span><span class="pf-v" style="color:var(--amber)">4.5–4.8 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Load</span><span class="pf-v">3.1–3.5 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Battery</span><span class="pf-v g">+1.3–1.7 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Grid</span><span class="pf-v g">0 W ✓</span></div>
+      </div>
+      <div class="pf-card">
+        <div class="pf-day av">⛅ AVERAGE</div>
+        <div class="pf-row"><span class="pf-k">PV</span><span class="pf-v" style="color:#86EFAC">3.5–4.2 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Load</span><span class="pf-v">3.1–3.5 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Battery</span><span class="pf-v g">+0.3–0.9 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Grid</span><span class="pf-v g">0 W ✓</span></div>
+      </div>
+      <div class="pf-card">
+        <div class="pf-day cl">☁ CLOUDY</div>
+        <div class="pf-row"><span class="pf-k">PV</span><span class="pf-v" style="color:#94A3B8">1.5–2.5 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Load</span><span class="pf-v">2.5–3.1 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Battery</span><span class="pf-v r">−0.5–1.0 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Grid</span><span class="pf-v a">0–0.5 kW</span></div>
+      </div>
+      <div class="pf-card">
+        <div class="pf-day ra">🌧 RAINY</div>
+        <div class="pf-row"><span class="pf-k">PV</span><span class="pf-v" style="color:#7DD3FC">0.5–1.5 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Load</span><span class="pf-v">2.5–3.0 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Battery</span><span class="pf-v r">−1.0–1.5 kW</span></div>
+        <div class="pf-row"><span class="pf-k">Grid</span><span class="pf-v r">0.5–1.5 kW</span></div>
+      </div>
+      <div class="pf-card full">
+        <div class="pf-day ni">🌙 NIGHTTIME — any day (1 AM)</div>
+        <div class="pf-grid2">
+          <div class="pf-row"><span class="pf-k">PV</span><span class="pf-v" style="color:var(--muted)">0 kW</span></div>
+          <div class="pf-row"><span class="pf-k">Load</span><span class="pf-v">~2.5 kW</span></div>
+          <div class="pf-row"><span class="pf-k">Battery</span><span class="pf-v r">−2.5 kW</span></div>
+          <div class="pf-row"><span class="pf-k">Grid</span><span class="pf-v g">0 kW ✓ <span style="color:var(--muted);font-size:9px;font-family:var(--sans)">(0.5–1 on storm)</span></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><b>Goal:</b> Grid = 0 W during the day. Any non-zero daytime grid = generation shortfall that day.</div>
+  </div>
+</div>
+
+<!-- 03 SOC CURVE -->
+<div class="sec">
+  <div class="sec-label"><em>03</em>BATTERY SOC CURVE — 24-HOUR GRAPH</div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th style="color:var(--amber)">☀ Sunny</th>
+          <th style="color:#86EFAC">⛅ Avg</th>
+          <th style="color:#94A3B8">☁ Cloudy</th>
+          <th style="color:var(--blue)">🌧 Rainy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="lbl">6 AM</td>  <td class="a">21%</td><td class="a">21%</td><td class="a">21%</td><td class="a">21%</td></tr>
+        <tr><td class="lbl">9 AM</td>  <td class="g">37%</td><td class="g">30%</td><td class="a">22%</td><td class="a">21%</td></tr>
+        <tr><td class="lbl">12 PM</td> <td class="g">57%</td><td class="g">45%</td><td class="a">27%</td><td class="a">23%</td></tr>
+        <tr><td class="lbl">3 PM</td>  <td class="g">~100%</td><td class="g">75%</td><td class="a">40%</td><td class="a">28%</td></tr>
+        <tr><td class="lbl">5 PM</td>  <td class="g">100% ✓</td><td class="g">97–100%</td><td class="a">54–60%</td><td class="a">30–40%</td></tr>
+        <tr><td class="lbl">9 PM</td>  <td class="g">72%</td><td class="g">69–72%</td><td class="a">30–40%</td><td class="r">20–25%</td></tr>
+        <tr><td class="lbl">12 AM</td> <td class="g">52%</td><td class="g">48%</td><td class="r">~20%*</td><td class="r">~20%*</td></tr>
+        <tr><td class="lbl" style="font-weight:700">6 AM ↩</td><td class="g">21% ✓</td><td class="g">19–21%</td><td class="r">~21%*</td><td class="r">~21%*</td></tr>
+      </tbody>
+    </table>
+    <div class="note">
+      * Grid holding battery at floor — expected on cloudy/rainy days. <b>Not a fault.</b><br>
+      <span style="color:var(--green);font-style:normal;font-weight:600">Green ≥ 40%</span> · <span style="color:var(--amber);font-style:normal;font-weight:600">Amber 20–39%</span> · <span style="color:var(--red);font-style:normal;font-weight:600">Red = grid running</span>
+    </div>
+  </div>
+</div>
+
+<!-- 04 CHECKPOINTS -->
+<div class="sec">
+  <div class="sec-label"><em>04</em>3 DAILY CHECKPOINTS — SCREENSHOT EVERY DAY</div>
+
+  <div class="cp">
+    <div class="cp-head gr">
+      <div class="cp-time g">🕕 6 AM — SUNRISE SOC</div>
+      <div class="cp-sub">First thing every morning</div>
+    </div>
+    <div class="cp-row">
+      <span class="cp-soc g">19 – 22%</span>
+      <span class="badge ok">✓ PERFECT</span>
+      <span class="cp-action">System worked exactly as designed.</span>
+    </div>
+    <div class="cp-row">
+      <span class="cp-soc a">Below 18%</span>
+      <span class="badge w">WATCH</span>
+      <span class="cp-action">Grid pulled overnight. Note the weather.</span>
+    </div>
+    <div class="cp-row">
+      <span class="cp-soc r">Below 18%<br>× 3 days</span>
+      <span class="badge bad">INVESTIGATE</span>
+      <span class="cp-action"><b>Check app history. Call contractor.</b></span>
+    </div>
+  </div>
+
+  <div class="cp">
+    <div class="cp-head am">
+      <div class="cp-time a">🕔 5 PM — SUNDOWN SOC + PV kWh</div>
+      <div class="cp-sub">Check both numbers together</div>
+    </div>
+    <div class="cp-row">
+      <span class="cp-soc g">97–100%<br>PV 21+ kWh</span>
+      <span class="badge ok">✓ SUNNY</span>
+      <span class="cp-action">Full battery. Good night ahead.</span>
+    </div>
+    <div class="cp-row">
+      <span class="cp-soc a">54–65%<br>PV 14–15 kWh</span>
+      <span class="badge w">CLOUDY</span>
+      <span class="cp-action">Expect grid tonight. Curtail if &lt; 50%.</span>
+    </div>
+    <div class="cp-row">
+      <span class="cp-soc r">Below 40%<br>PV &lt; 10 kWh</span>
+      <span class="badge bad">RAINY/STORM</span>
+      <span class="cp-action">Grid will run. In the model — not a fault.</span>
+    </div>
+  </div>
+
+  <div class="cp">
+    <div class="cp-head bl">
+      <div class="cp-time b">🕘 9 PM — EVENING CHECKPOINT</div>
+      <div class="cp-sub">Decide on overnight discipline</div>
+    </div>
+    <div class="cp-row">
+      <span class="cp-soc g">~72%</span>
+      <span class="badge ok">✓ NORMAL</span>
+      <span class="cp-action">Good overnight. No action needed.</span>
+    </div>
+    <div class="cp-row">
+      <span class="cp-soc a">50 – 72%</span>
+      <span class="badge w">WATCH</span>
+      <span class="cp-action">Consider AC at 26°C tonight.</span>
+    </div>
+    <div class="cp-row">
+      <span class="cp-soc r">Below 50%</span>
+      <span class="badge bad">CURTAIL</span>
+      <span class="cp-action"><b>Kill 4 LEDs + reduce to 3 fans.</b> Saves ~1.2 kWh.</span>
+    </div>
+    <div class="cp-row">
+      <span class="cp-soc r">Below 35%</span>
+      <span class="badge bad">REDUCE HARD</span>
+      <span class="cp-action"><b>AC to 28°C + fans in occupied rooms only.</b></span>
+    </div>
+  </div>
+</div>
+
+<!-- 05 TODAY TAB -->
+<div class="sec">
+  <div class="sec-label"><em>05</em>TODAY TAB — END-OF-DAY SCORECARD</div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th style="color:var(--amber)">☀</th>
+          <th style="color:#86EFAC">⛅</th>
+          <th style="color:#94A3B8">☁</th>
+          <th style="color:var(--blue)">🌧</th>
+          <th style="color:var(--red)">🌀</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="lbl">PV Gen (kWh)*</td>
+          <td class="mn">21–23</td><td class="mn">21–22</td><td class="mn">14–15</td><td class="mn">7–8</td><td class="mn">2–3</td>
+        </tr>
+        <tr>
+          <td class="lbl">Load (kWh)</td>
+          <td class="mn">~19.75</td><td class="mn">~19.75</td><td class="mn">~19.75</td><td class="mn">18–20</td><td class="mn">18–20</td>
+        </tr>
+        <tr style="background:rgba(251,191,36,0.05)">
+          <td class="lbl" style="font-weight:700;color:var(--amber)">Grid Import ↓</td>
+          <td class="g">0</td><td class="g">0–0.5</td><td class="a">1.5–2.5</td><td class="r">3–5</td><td class="r">7–8</td>
+        </tr>
+        <tr>
+          <td class="lbl">Batt Charged</td>
+          <td class="mn">~11.3</td><td class="mn">~11.3</td><td class="mn">4.5–5.5</td><td class="mn">1–2</td><td class="mn">~0</td>
+        </tr>
+        <tr>
+          <td class="lbl">Batt Discharged</td>
+          <td class="mn">~11.3</td><td class="mn">~11.3</td><td class="mn">8–10</td><td class="mn">3–5</td><td class="mn">0–1</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">
+      *PV lower than theoretical 26.6 kWh max — inverter backs off once battery hits 100%. <b>Normal.</b><br>
+      Grid Import × ₱16.77 = estimated FICELCO charge for that day.
+    </div>
+  </div>
+</div>
+
+<!-- 06 MONTHLY -->
+<div class="sec">
+  <div class="sec-label"><em>06</em>MONTHLY TAB — CHECK ONCE A WEEK</div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Season</th>
+          <th>PV Gen</th>
+          <th>Grid Import</th>
+          <th>Est. Bill</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="lbl">Feb–May <span class="dim">dry</span></td>
+          <td class="g">600–680</td><td class="g">15–25 kWh</td><td class="g">~₱250–420</td>
+        </tr>
+        <tr>
+          <td class="lbl">Jun–Aug</td>
+          <td class="t">500–600</td><td class="a">30–50 kWh</td><td class="a">~₱500–840</td>
+        </tr>
+        <tr>
+          <td class="lbl">Sep–Dec <span class="dim">typhoon</span></td>
+          <td class="a">350–500</td><td class="r">80–120 kWh</td><td class="r">~₱900–1,100</td>
+        </tr>
+        <tr style="background:rgba(45,212,191,0.05)">
+          <td class="lbl" style="font-weight:700">Annual</td>
+          <td class="t">~6,000</td><td class="g">~439 kWh</td><td class="g">~₱7,362</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">Pre-solar annual bill was ~₱52,320/yr. Sep–Dec spike is in the model — <b>not a system failure.</b></div>
+  </div>
+</div>
+
+<!-- 07 RED FLAGS -->
+<div class="sec">
+  <div class="sec-label"><em>07</em>RED FLAGS — NEVER IGNORE</div>
+  <div class="card">
+    <div class="flag">
+      <span class="fi">⚡</span>
+      <div>
+        <div class="fw">PV 30–40% low on a clear sunny day</div>
+        <div class="fy">Seeing ~13 kWh when expecting 21+ kWh — one 5-panel string may have disconnected.</div>
+        <div class="fd">→ Check inverter LCD for DC fault. Call contractor same day.</div>
+      </div>
+    </div>
+    <div class="flag">
+      <span class="fi">🔋</span>
+      <div>
+        <div class="fw">Battery SOC stuck flat for hours in daytime</div>
+        <div class="fy">Charging stopped — BMS or inverter fault.</div>
+        <div class="fd">→ Screenshot fault code. Call contractor.</div>
+      </div>
+    </div>
+    <div class="flag">
+      <span class="fi">📈</span>
+      <div>
+        <div class="fw">Grid import &gt; 3 kWh/day for 2+ weeks</div>
+        <div class="fy">Load higher than modeled or generation underperforming.</div>
+        <div class="fd">→ Review habits first. If normal, call contractor.</div>
+      </div>
+    </div>
+    <div class="flag">
+      <span class="fi">📡</span>
+      <div>
+        <div class="fw">"Communication Lost" on dongle</div>
+        <div class="fy">WiFi dropped or dongle hardware issue.</div>
+        <div class="fd">→ Restart dongle. Check WiFi signal near inverter.</div>
+      </div>
+    </div>
+    <div class="flag">
+      <span class="fi">🌡</span>
+      <div>
+        <div class="fw">Battery over-temperature alert</div>
+        <div class="fy">SE15B too hot — needs ventilated, shaded indoor space.</div>
+        <div class="fd">→ Check battery placement immediately.</div>
+      </div>
+    </div>
+    <div class="flag">
+      <span class="fi">🚨</span>
+      <div>
+        <div class="fw">Any red fault banner in SolarMan</div>
+        <div class="fy">System fault — do not dismiss.</div>
+        <div class="fd">→ Screenshot + send to contractor immediately.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 08 DISCIPLINE -->
+<div class="sec">
+  <div class="sec-label"><em>08</em>FREE SAVINGS — DISCIPLINE CHEAT SHEET</div>
+  <div class="card">
+    <div class="disc-hdr">
+      <span>Action</span><span>Save/Mo</span><span>Cost</span>
+    </div>
+    <div class="disc-row">
+      <span class="da">Kill 4 LEDs at sleep time</span>
+      <span class="dn">~₱100</span><span class="df">Free</span>
+    </div>
+    <div class="disc-row">
+      <span class="da">Reduce overnight fans 5 → 3</span>
+      <span class="dn">~₱270</span><span class="df">Free</span>
+    </div>
+    <div class="disc-row">
+      <span class="da">AC at 26°C overnight not 24°C</span>
+      <span class="dn">~₱155</span><span class="df">Free</span>
+    </div>
+    <div class="disc-row total">
+      <span class="da bold">All three combined</span>
+      <span class="dn" style="font-size:12px">~₱525</span>
+      <span class="df" style="font-size:11px;font-weight:700">Free</span>
+    </div>
+    <div class="disc-row">
+      <span class="da">Add +2 panels <span style="color:var(--muted);font-size:10px">(year 2 option)</span></span>
+      <span class="dn">~₱394</span>
+      <span class="df dim">₱12k · 2.5yr</span>
+    </div>
+    <div class="note">
+      <b>Hard trip rules:</b> Never run kettle + microwave together. Never window AC + kettle/microwave at full daytime use. Inverter trips at ~6 kW.
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="fl">Solar ni Bimby · v3.6 · May 2026</div>
+  <div class="fr">SRNE HESP4860S100-H<br>SR-SE15B · 10× OSDA 580W</div>
+</div>
+
+</body>
+</html>
