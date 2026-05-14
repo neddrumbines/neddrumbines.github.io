@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Bimby Solar — Stress Test</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.10/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: #060d1a;
+      font-family: 'IBM Plex Mono', 'Courier New', monospace;
+      color: #e2e8f0;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    #root { min-height: 100vh; }
+    button {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      cursor: pointer;
+      font-family: inherit;
+      outline: none;
+      border: none;
+    }
+    .scroll-x {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .scroll-x::-webkit-scrollbar { display: none; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .ref-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .period-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .ctrl-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .ctrl-btn {
+      flex: 1 1 80px;
+      min-height: 52px;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 11px;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .tab-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+    }
+    .tab-btn {
+      padding: 10px 6px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    @media (min-width: 640px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+      .ref-grid { grid-template-columns: repeat(3, 1fr); }
+      .period-grid { grid-template-columns: repeat(4, 1fr); }
+      .ctrl-btn { font-size: 12px; min-height: 56px; flex: 0 0 auto; }
+      .tab-btn { font-size: 13px; padding: 10px 16px; }
+    }
+    @media (min-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(8, 1fr); gap: 10px; }
+    }
+    /* iOS safe area for notched phones */
+    .page-wrap {
+      padding: env(safe-area-inset-top, 12px) env(safe-area-inset-right, 14px)
+               env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 14px);
+    }
+    .verdict-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .verdict-item {
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 11px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#f59e0b;font-family:monospace;font-size:13px;letter-spacing:2px;flex-direction:column;gap:12px;">
+      <div>⚡ LOADING SOLAR DASHBOARD</div>
+      <div style="font-size:10px;color:#334155;">Hang on, crunching the numbers...</div>
+    </div>
+  </div>
+
+  <script type="text/babel">
+    const { useState, useMemo, useEffect } = React;
+    const {
+      ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
+      Tooltip, ResponsiveContainer, ReferenceLine, Legend
+    } = Recharts;
+
+    // ── SYSTEM CONSTANTS ─────────────────────────────────────────
+    const BATT_MAX   = 14.33;
+    const BATT_FLOOR = 2.87;
+    const CHARGE_EFF = 0.95;
+    const RATE       = 16.071;
+
+    // ── PV GENERATION (kWh/hr, index 0=midnight) ─────────────────
+    const PV_RAW = {
+      sunny:   [0,0,0,0,0,0, 0.30,0.75,1.50,2.44,3.19,3.57,3.76,3.57,3.19,2.44,1.50,0.38, 0,0,0,0,0,0],
+      average: [0,0,0,0,0,0, 0.25,0.61,1.23,1.99,2.61,2.92,3.08,2.92,2.61,1.99,1.23,0.31, 0,0,0,0,0,0],
+      rainy:   [0,0,0,0,0,0, 0.08,0.21,0.41,0.67,0.87,0.97,1.03,0.97,0.87,0.67,0.41,0.10, 0,0,0,0,0,0],
+    };
+
+    // ── LOAD PROFILES (kWh/hr, index 0=midnight) ─────────────────
+    const LOAD_STD = [
+      0.915,0.915,0.915,0.915,0.915,0.915,  // 0–5 AM  sleep
+      0.405, 0.735,                           // 6–7 AM
+      0.815, 0.815,                           // 8–9 AM  AC on + laptop
+      1.065, 1.065,                           // 10–11 AM + gaming 250W
+      1.065,                                  // 12 PM   AC last hr
+      0.665, 0.665, 0.665,                    // 1–3 PM
+      0.765, 0.625,                           // 4–5 PM
+      1.025,                                  // 6 PM    rice + TV + LEDs
+      0.625, 0.625, 0.625,                    // 7–9 PM
+      0.915, 0.915,                           // 10–11 PM sleep
+    ];
+    // Heavy: gaming PC 600W from 7AM, kettle 9AM
+    const LOAD_HEAVY = [
+      0.915,0.915,0.915,0.915,0.915,0.915,
+      0.405, 1.335,
+      1.415, 1.865,   // 9 AM includes kettle 15 min (avg 450W extra)
+      1.415, 1.415,
+      1.065,
+      0.665, 0.665, 0.665,
+      0.765, 0.625,
+      1.025,
+      0.625, 0.625, 0.625,
+      0.915, 0.915,
+    ];
+
+    const START_SOC = { typical: 3.06, half: 7.16, full: BATT_MAX };
+
+    // ── SIMULATION (starts at 6 AM, 24 hrs to next 5 AM) ─────────
+    function simulate(dayType, loadMode, startSocKey) {
+      const pvRaw   = PV_RAW[dayType];
+      const loadRaw = loadMode === "heavy" ? LOAD_HEAVY : LOAD_STD;
+      let batt      = START_SOC[startSocKey];
+      return Array.from({ length: 24 }, (_, i) => {
+        const h    = (6 + i) % 24;
+        const pv   = pvRaw[h];
+        const load = loadRaw[h];
+        const net  = pv - load;
+        let fromPV = 0, fromBatt = 0, fromGrid = 0, curtailed = 0;
+        if (net >= 0) {
+          fromPV = load;
+          const canStore = Math.min(net * CHARGE_EFF, BATT_MAX - batt);
+          batt      += canStore;
+          curtailed  = Math.max(0, net - canStore / CHARGE_EFF);
+        } else {
+          fromPV   = pv;
+          const deficit = -net;
+          const avail   = Math.max(0, batt - BATT_FLOOR);
+          fromBatt = Math.min(deficit, avail);
+          fromGrid = deficit - fromBatt;
+          batt    -= fromBatt;
+        }
+        batt = Math.max(BATT_FLOOR, Math.min(BATT_MAX, batt));
+        return { simIdx:i, realHour:h, pv, load, fromPV, fromBatt, fromGrid, curtailed,
+                 battKwh: batt, battSOC: (batt / BATT_MAX) * 100 };
+      });
+    }
+
+    const fmtH = h => h === 0 ? "12AM" : h < 12 ? `${h}AM` : h === 12 ? "12PM" : `${h-12}PM`;
+    const f2   = n => Number(n).toFixed(2);
+    const f0   = n => Number(n).toFixed(0);
+    const f1   = n => Number(n).toFixed(1);
+
+    // ── CUSTOM TOOLTIP ────────────────────────────────────────────
+    function ChartTip({ active, payload }) {
+      if (!active || !payload?.length) return null;
+      const d = payload[0]?.payload;
+      if (!d) return null;
+      return (
+        <div style={{background:"#0a1628",border:"1px solid #1e3a5f",borderRadius:10,padding:"11px 14px",fontSize:11,fontFamily:"'IBM Plex Mono',monospace",minWidth:185}}>
+          <div style={{fontWeight:700,color:"#94a3b8",marginBottom:8,fontSize:12}}>{fmtH(d.realHour)}</div>
+          <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:"3px 10px",alignItems:"center"}}>
+            <span style={{color:"#64748b"}}>PV out</span><span style={{color:"#fbbf24"}}>{f2(d.pv)} kWh</span>
+            <span style={{color:"#64748b"}}>Load</span><span style={{color:"#e2e8f0"}}>{f2(d.load)} kWh</span>
+            <span style={{color:"#64748b"}}>← Solar</span><span style={{color:"#f59e0b"}}>{f2(d.fromPV)} kWh</span>
+            <span style={{color:"#64748b"}}>← Battery</span><span style={{color:"#60a5fa"}}>{f2(d.fromBatt)} kWh</span>
+            {d.fromGrid > 0.005 && <><span style={{color:"#ef4444",fontWeight:700}}>⚠ GRID</span><span style={{color:"#ef4444",fontWeight:700}}>{f2(d.fromGrid)} kWh</span></>}
+            {d.curtailed > 0.005 && <><span style={{color:"#334155"}}>Wasted</span><span style={{color:"#334155"}}>{f2(d.curtailed)} kWh</span></>}
+          </div>
+          <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid #1e3a5f",display:"grid",gridTemplateColumns:"auto 1fr",gap:"3px 10px"}}>
+            <span style={{color:"#64748b"}}>Battery</span>
+            <span style={{color: d.battSOC < 25 ? "#ef4444" : d.battSOC > 90 ? "#22c55e" : "#60a5fa",fontWeight:700}}>
+              {f1(d.battSOC)}% · {f2(d.battKwh)} kWh
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    // ── STAT CARD ─────────────────────────────────────────────────
+    function Stat({ label, value, sub, color }) {
+      return (
+        <div style={{background:"#0d1b2e",borderRadius:10,padding:"12px 14px",border:"1px solid #1e3a5f"}}>
+          <div style={{fontSize:9,letterSpacing:2,color:"#475569",textTransform:"uppercase",marginBottom:4}}>{label}</div>
+          <div style={{fontSize:18,fontWeight:800,color,lineHeight:1}}>{value}</div>
+          {sub && <div style={{fontSize:10,color:"#475569",marginTop:4,lineHeight:1.4}}>{sub}</div>}
+        </div>
+      );
+    }
+
+    // ── CONTROL BUTTON ────────────────────────────────────────────
+    function CBtn({ active, activeColor, textColor="#fff", onClick, top, sub }) {
+      return (
+        <button className="ctrl-btn" onClick={onClick}
+          style={{background: active ? activeColor : "#0d1b2e",
+                  color: active ? textColor : "#64748b",
+                  border: `1px solid ${active ? activeColor : "#1e3a5f"}`}}>
+          <div style={{fontWeight: active ? 700 : 400}}>{top}</div>
+          {sub && <div style={{fontSize:9,opacity:0.75,marginTop:3,lineHeight:1.3}}>{sub}</div>}
+        </button>
+      );
+    }
+
+    // ── VERDICTS ─────────────────────────────────────────────────
+    function Verdicts({ data, dayType, loadMode, startSocKey, totalGrid, totalCurtailed }) {
+      const sd  = data[11];
+      const nsr = data[23];
+      const lines = [];
+      if (loadMode === "heavy" && totalGrid > 0.1) {
+        const peak = data.reduce((m,d)=>d.fromGrid>m.fromGrid?d:m,data[0]);
+        lines.push({c:"#ef4444", t:`⚠ Grid pull at ${fmtH(peak.realHour)} — PV ramp too slow for heavy load. Battery was near floor.`});
+      }
+      if (loadMode === "heavy" && dayType !== "rainy" && totalGrid < 2)
+        lines.push({c:"#f59e0b", t:`↻ System self-corrects — battery recovers by afternoon. Heavy morning costs ₱${(totalGrid*RATE).toFixed(2)}.`});
+      if (sd && sd.battSOC >= 99 && dayType !== "rainy")
+        lines.push({c:"#22c55e", t:`✓ Battery hits 100% by early afternoon. ${f2(totalCurtailed)} kWh wasted (no net metering).`});
+      if (sd && sd.battSOC < 90 && sd.battSOC > 0 && dayType !== "rainy")
+        lines.push({c:"#f59e0b", t:`! Sundown SOC ${f0(sd.battSOC)}% — heavy morning reduced afternoon charging headroom.`});
+      if (nsr && nsr.battSOC < 22)
+        lines.push({c:"#f59e0b", t:`! Next sunrise at ${f0(nsr.battSOC)}% — right at floor. Normal B-corrected reality.`});
+      if (dayType === "rainy" && startSocKey === "typical")
+        lines.push({c:"#ef4444", t:`⚠ Rainy day starting at 21%: grid covers most of day + entire night. Always start rainy days with full battery.`});
+      if (dayType === "rainy" && startSocKey === "full")
+        lines.push({c:"#22c55e", t:`✓ Full battery start: isolated rainy day survivable. Grid only pulls near end of night.`});
+      if (totalGrid < 0.05 && loadMode === "standard")
+        lines.push({c:"#22c55e", t:`✓ Zero grid day — fully self-sufficient with current load profile.`});
+      if (!lines.length) return null;
+      return (
+        <div className="verdict-row">
+          {lines.map((l,i) => (
+            <div key={i} className="verdict-item"
+              style={{background:"rgba(13,27,46,0.9)",border:`1px solid ${l.c}40`,borderLeft:`3px solid ${l.c}`,color:l.c}}>
+              {l.t}
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // ── APPLIANCE DATA ─────────────────────────────────────────────
+    const APPLIANCES = [
+      {name:"Inverter AC (sleep)",    w:"400W avg",   hrs:"10PM–6AM",  tag:"night", kwh:"3.20"},
+      {name:"Inverter AC (daytime)",  w:"400W avg",   hrs:"8AM–1PM",   tag:"day",   kwh:"2.00"},
+      {name:"5 Added Fans (night)",   w:"275W total", hrs:"Night+Eve",  tag:"night", kwh:"2.20"},
+      {name:"5 Added Fans (3 day)",   w:"165W total", hrs:"6AM–5PM",   tag:"day",   kwh:"1.65"},
+      {name:"4 LED Bulbs",            w:"40W",        hrs:"6PM–7AM",   tag:"night", kwh:"0.48"},
+      {name:"Gaming PC (std)",        w:"250W avg",   hrs:"10AM–5PM",  tag:"day",   kwh:"1.75"},
+      {name:"Gaming PC (heavy)",      w:"600W",       hrs:"7AM–12PM",  tag:"warn",  kwh:"3.00"},
+      {name:"Work Laptop",            w:"80W",        hrs:"8AM–5PM",   tag:"day",   kwh:"0.72"},
+      {name:"Rice Cooker ×2",         w:"~400W avg",  hrs:"7AM + 6PM", tag:"peak",  kwh:"0.80"},
+      {name:"Kettle (heavy only)",    w:"1800W×15min",hrs:"9AM",       tag:"warn",  kwh:"0.45"},
+      {name:"TV",                     w:"140W",       hrs:"5PM–10PM",  tag:"eve",   kwh:"0.70"},
+      {name:"Fridge (inverter)",      w:"50W",        hrs:"24/7",      tag:"always",kwh:"1.20"},
+      {name:"2 Original Fans",        w:"70W",        hrs:"24/7",      tag:"always",kwh:"1.68"},
+      {name:"Router + Standby",       w:"50W",        hrs:"24/7",      tag:"always",kwh:"1.20"},
+      {name:"Phones (2–3)",           w:"30W",        hrs:"10PM–7AM",  tag:"night", kwh:"0.18"},
+    ];
+    const TAG_C = {night:"#818cf8",day:"#f59e0b",always:"#6b7280",peak:"#f97316",eve:"#c084fc",warn:"#ef4444"};
+
+    // ── MAIN APP ──────────────────────────────────────────────────
+    function SolarStressTest() {
+      const [dayType,    setDayType]   = useState("average");
+      const [loadMode,   setLoadMode]  = useState("standard");
+      const [startSocK,  setStartSoc]  = useState("typical");
+      const [view,       setView]      = useState("chart");
+      const [isMobile,   setIsMobile]  = useState(window.innerWidth < 640);
+
+      useEffect(() => {
+        const handler = () => setIsMobile(window.innerWidth < 640);
+        window.addEventListener("resize", handler);
+        return () => window.removeEventListener("resize", handler);
+      }, []);
+
+      const data = useMemo(() => simulate(dayType, loadMode, startSocK), [dayType, loadMode, startSocK]);
+
+      const totalGrid      = data.reduce((s,d) => s + d.fromGrid, 0);
+      const totalCurtailed = data.reduce((s,d) => s + d.curtailed, 0);
+      const totalPV        = data.reduce((s,d) => s + d.fromPV, 0);
+      const totalBatt      = data.reduce((s,d) => s + d.fromBatt, 0);
+      const totalLoad      = data.reduce((s,d) => s + d.load, 0);
+      const gridCost       = totalGrid * RATE;
+
+      const sundownRow  = data[11];   // after 5PM = state at 6PM
+      const nextSunrise = data[23];   // after 5AM = state at 6AM next
+      const peakGrid    = data.reduce((m,d) => d.fromGrid > m.fromGrid ? d : m, data[0]);
+      const battFullAt  = data.find(d => d.battSOC >= 99.5);
+
+      const P = isMobile ? 14 : 20;  // page padding
+      const chartH = isMobile ? 250 : 360;
+
+      const chartData = data.map(d => ({ ...d, label: fmtH(d.realHour) }));
+
+      // X-axis tick filter
+      const tickHours = isMobile ? [0,3,6,9,12,15,18,21] : [0,2,4,6,8,10,12,14,16,18,20,22];
+
+      return (
+        <div className="page-wrap" style={{padding: P, paddingTop: Math.max(P, 16)}}>
+
+          {/* ── HEADER ── */}
+          <div style={{marginBottom:16}}>
+            <div style={{fontSize:9,letterSpacing:3,color:"#f59e0b",textTransform:"uppercase",marginBottom:5,lineHeight:1.5}}>
+              SRNE HESP4860S100-H · SE15B 14.33kWh LFP · 10× OSDA 580W · 4.84kW eff
+            </div>
+            <h1 style={{fontSize: isMobile ? 19 : 26, fontWeight:800, color:"#f1f5f9", letterSpacing:-0.5, lineHeight:1.2}}>
+              Solar Stress Test
+            </h1>
+            <div style={{fontSize:11,color:"#475569",marginTop:4}}>B-corrected v3.6 · ₱16.071/kWh May 2026</div>
+          </div>
+
+          {/* ── CONTROLS ── */}
+          <div style={{background:"#0d1b2e",borderRadius:12,padding:"14px",border:"1px solid #1e3a5f",marginBottom:16,display:"flex",flexDirection:"column",gap:12}}>
+
+            <div>
+              <div style={{fontSize:9,letterSpacing:2,color:"#475569",marginBottom:6,textTransform:"uppercase"}}>Day Type</div>
+              <div className="ctrl-row">
+                <CBtn active={dayType==="sunny"}   activeColor="#f59e0b" textColor="#000" onClick={()=>setDayType("sunny")}   top="☀ Sunny"   sub="26.6 kWh PV"/>
+                <CBtn active={dayType==="average"} activeColor="#60a5fa" textColor="#fff" onClick={()=>setDayType("average")} top="⛅ Average" sub="21.8 kWh PV"/>
+                <CBtn active={dayType==="rainy"}   activeColor="#6b7280" textColor="#fff" onClick={()=>setDayType("rainy")}   top="🌧 Rainy"   sub="7.3 kWh PV"/>
+              </div>
+            </div>
+
+            <div>
+              <div style={{fontSize:9,letterSpacing:2,color:"#475569",marginBottom:6,textTransform:"uppercase"}}>Morning Load</div>
+              <div className="ctrl-row">
+                <CBtn active={loadMode==="standard"} activeColor="#22c55e" textColor="#000" onClick={()=>setLoadMode("standard")} top="📊 Standard"  sub="PC on 10AM · 250W"/>
+                <CBtn active={loadMode==="heavy"}    activeColor="#ef4444" textColor="#fff" onClick={()=>setLoadMode("heavy")}    top="⚡ Heavy AM" sub="PC 7AM · 600W + kettle"/>
+              </div>
+            </div>
+
+            <div>
+              <div style={{fontSize:9,letterSpacing:2,color:"#475569",marginBottom:6,textTransform:"uppercase"}}>Battery at 6AM Sunrise</div>
+              <div className="ctrl-row">
+                <CBtn active={startSocK==="typical"} activeColor="#f59e0b" textColor="#000" onClick={()=>setStartSoc("typical")} top="21% Typical" sub="3.06 kWh · avg night"/>
+                <CBtn active={startSocK==="half"}    activeColor="#60a5fa" textColor="#fff" onClick={()=>setStartSoc("half")}    top="50% Mid"     sub="7.16 kWh · cloudy"/>
+                <CBtn active={startSocK==="full"}    activeColor="#22c55e" textColor="#000" onClick={()=>setStartSoc("full")}    top="100% Full"   sub="14.33 kWh · sunny"/>
+              </div>
+            </div>
+          </div>
+
+          {/* ── VERDICTS ── */}
+          <Verdicts data={data} dayType={dayType} loadMode={loadMode} startSocKey={startSocK}
+                    totalGrid={totalGrid} totalCurtailed={totalCurtailed} />
+
+          {/* ── STATS GRID ── */}
+          <div className="stats-grid" style={{marginBottom:16}}>
+            <Stat label="Grid Pulled" value={`${f2(totalGrid)} kWh`}
+              sub={totalGrid < 0.05 ? "✅ Grid-free!" : `₱${f2(gridCost)}`}
+              color={totalGrid < 0.1 ? "#22c55e" : totalGrid < 1.5 ? "#f59e0b" : "#ef4444"} />
+            <Stat label="SOC at 6PM" value={`${f0(sundownRow?.battSOC ?? 0)}%`}
+              sub={`${f2(sundownRow?.battKwh ?? 0)} kWh`}
+              color={(sundownRow?.battSOC ?? 0) > 95 ? "#22c55e" : (sundownRow?.battSOC ?? 0) > 60 ? "#f59e0b" : "#ef4444"} />
+            <Stat label="Next Sunrise" value={`${f0(nextSunrise?.battSOC ?? 0)}%`}
+              sub={`${f2(nextSunrise?.battKwh ?? 0)} kWh`}
+              color={(nextSunrise?.battSOC ?? 0) < 22 ? "#ef4444" : (nextSunrise?.battSOC ?? 0) < 40 ? "#f59e0b" : "#22c55e"} />
+            <Stat label="Full At" value={battFullAt ? fmtH(battFullAt.realHour) : "Never"}
+              sub={battFullAt ? "Battery 100%" : dayType === "rainy" ? "Rainy — no full" : "Insufficient PV"}
+              color={battFullAt ? "#22c55e" : "#ef4444"} />
+            <Stat label="Solar Cover" value={`${f0(totalPV / totalLoad * 100)}%`}
+              sub={`${f2(totalPV)} kWh from PV`} color="#f59e0b" />
+            <Stat label="PV Wasted" value={`${f2(totalCurtailed)} kWh`}
+              sub="No net metering" color={totalCurtailed > 3 ? "#f59e0b" : "#6b7280"} />
+            <Stat label="Peak Grid Hr" value={totalGrid > 0.01 ? fmtH(peakGrid.realHour) : "None"}
+              sub={totalGrid > 0.01 ? `${f2(peakGrid.fromGrid)} kWh` : "Grid-free ✅"}
+              color={totalGrid > 0.01 ? "#ef4444" : "#22c55e"} />
+            <Stat label="Grid Cost/Day" value={`₱${f2(gridCost)}`}
+              sub={`~₱${f2(gridCost*30)}/mo est.`}
+              color={gridCost < 5 ? "#22c55e" : gridCost < 50 ? "#f59e0b" : "#ef4444"} />
+          </div>
+
+          {/* ── VIEW TABS ── */}
+          <div className="tab-row" style={{marginBottom:14}}>
+            {[["chart","📈 Chart"],["table","📋 Table"],["appl","🔌 Appliances"]].map(([k,label])=>(
+              <button key={k} className="tab-btn" onClick={()=>setView(k)}
+                style={{background: view===k ? "#1e3a5f" : "#0d1b2e",
+                        color: view===k ? "#e2e8f0" : "#475569",
+                        border: `1px solid ${view===k ? "#3b82f6" : "#1e3a5f"}`,
+                        fontFamily:"inherit",fontWeight: view===k ? 700 : 400}}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── CHART VIEW ── */}
+          {view === "chart" && (
+            <div style={{background:"#0d1b2e",borderRadius:12,padding:"16px 10px",border:"1px solid #1e3a5f",marginBottom:16}}>
+              <div style={{fontSize:9,letterSpacing:2,color:"#475569",marginBottom:14,textTransform:"uppercase",paddingLeft:6}}>
+                24-Hour Energy Flow · 6AM → 5AM next day
+              </div>
+              <ResponsiveContainer width="100%" height={chartH}>
+                <ComposedChart data={chartData} margin={{top:5,right:isMobile?40:52,left:isMobile?-10:0,bottom:0}} barCategoryGap="18%">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#0f2040" vertical={false}/>
+                  <XAxis dataKey="label"
+                    tick={{fill:"#475569",fontSize: isMobile ? 9 : 10,fontFamily:"IBM Plex Mono,monospace"}}
+                    tickLine={false} axisLine={{stroke:"#1e3a5f"}}
+                    ticks={chartData.filter(d=>tickHours.includes(d.realHour)).map(d=>d.label)}
+                  />
+                  <YAxis yAxisId="kwh"
+                    tick={{fill:"#475569",fontSize:9}} tickLine={false} axisLine={false}
+                    width={isMobile ? 28 : 35}
+                    label={isMobile ? null : {value:"kWh",angle:-90,position:"insideLeft",fill:"#475569",fontSize:10,dx:-4}}
+                  />
+                  <YAxis yAxisId="soc" orientation="right"
+                    tick={{fill:"#22c55e",fontSize:9}} tickLine={false} axisLine={false}
+                    domain={[0,105]} unit="%" width={isMobile ? 35 : 42}
+                  />
+                  <Tooltip content={<ChartTip/>}/>
+                  <Bar yAxisId="kwh" dataKey="fromPV"    name="← Solar"   stackId="load"  fill="#f59e0b" opacity={0.92}/>
+                  <Bar yAxisId="kwh" dataKey="fromBatt"  name="← Battery" stackId="load"  fill="#3b82f6" opacity={0.92}/>
+                  <Bar yAxisId="kwh" dataKey="fromGrid"  name="← Grid ⚠"  stackId="load"  fill="#ef4444" opacity={0.95}/>
+                  <Bar yAxisId="kwh" dataKey="curtailed" name="PV Wasted"  stackId="waste" fill="#1a2a40" opacity={0.9}/>
+                  <Line yAxisId="kwh" type="monotone" dataKey="pv" name="PV Generated"
+                    stroke="#fbbf24" strokeWidth={isMobile?1.5:2} strokeDasharray="5 3" dot={false}/>
+                  <Line yAxisId="soc" type="monotone" dataKey="battSOC" name="Battery SOC %"
+                    stroke="#22c55e" strokeWidth={isMobile?2:2.5} dot={false}/>
+                  <ReferenceLine yAxisId="soc" y={20} stroke="#ef4444" strokeDasharray="4 3"
+                    label={{value:"20% floor",position:"insideTopRight",fill:"#ef4444",fontSize:8,fontFamily:"IBM Plex Mono"}}/>
+                  <ReferenceLine yAxisId="soc" y={100} stroke="#22c55e" strokeDasharray="4 3" opacity={0.3}/>
+                  <Legend iconType="square"
+                    wrapperStyle={{fontSize: isMobile ? 9 : 11, color:"#64748b", paddingTop:12, fontFamily:"IBM Plex Mono,monospace"}}/>
+                </ComposedChart>
+              </ResponsiveContainer>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:"#1e3a5f",marginTop:8,paddingLeft:isMobile?28:35}}>
+                <span>◀ NIGHT</span>
+                <span style={{color:"#f59e0b50"}}>☀ SOLAR WINDOW 6AM–5PM</span>
+                <span>NIGHT ▶</span>
+              </div>
+            </div>
+          )}
+
+          {/* ── TABLE VIEW ── */}
+          {view === "table" && (
+            <div style={{background:"#0d1b2e",borderRadius:12,padding:"16px 0",border:"1px solid #1e3a5f",marginBottom:16}}>
+              <div style={{fontSize:9,letterSpacing:2,color:"#475569",marginBottom:12,textTransform:"uppercase",paddingLeft:16}}>
+                Hourly Breakdown · Swipe right to see all columns
+              </div>
+              <div className="scroll-x">
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,minWidth:580}}>
+                  <thead>
+                    <tr>
+                      {["Hour","PV kWh","Load kWh","← Solar","← Batt","← GRID","Wasted","Batt kWh","SOC"].map(h=>(
+                        <th key={h} style={{textAlign:"left",padding:"8px 12px",color:"#475569",fontWeight:600,
+                          borderBottom:"1px solid #1e3a5f",fontSize:9,letterSpacing:0.5,whiteSpace:"nowrap"}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.map((d,i) => {
+                      const isGrid    = d.fromGrid > 0.005;
+                      const isCurtail = d.curtailed > 0.005;
+                      const isFloor   = d.battSOC <= 20.5;
+                      const isDay     = d.realHour >= 6 && d.realHour <= 17;
+                      const isMark    = i === 0 || i === 11;
+                      return (
+                        <tr key={i} style={{
+                          background: isGrid ? "rgba(239,68,68,0.07)" : isCurtail ? "rgba(30,58,95,0.35)" : "transparent",
+                          borderBottom:"1px solid #0f2040"
+                        }}>
+                          <td style={{padding:"7px 12px",color: isMark ? "#f59e0b" : "#94a3b8",fontWeight: isMark ? 700 : 500,whiteSpace:"nowrap"}}>
+                            {fmtH(d.realHour)}{i===0?" ↑":""}
+                          </td>
+                          <td style={{padding:"7px 12px",color:"#fbbf24"}}>{f2(d.pv)}</td>
+                          <td style={{padding:"7px 12px",color:"#e2e8f0"}}>{f2(d.load)}</td>
+                          <td style={{padding:"7px 12px",color:"#f59e0b"}}>{f2(d.fromPV)}</td>
+                          <td style={{padding:"7px 12px",color:"#60a5fa"}}>{f2(d.fromBatt)}</td>
+                          <td style={{padding:"7px 12px",color: isGrid ? "#ef4444" : "#1e3a5f",fontWeight: isGrid ? 700 : 400}}>
+                            {isGrid ? `⚠ ${f2(d.fromGrid)}` : "—"}
+                          </td>
+                          <td style={{padding:"7px 12px",color: isCurtail ? "#334155" : "#0f172a"}}>
+                            {isCurtail ? f2(d.curtailed) : "—"}
+                          </td>
+                          <td style={{padding:"7px 12px",color: isFloor ? "#ef4444" : d.battKwh > 13 ? "#22c55e" : "#60a5fa",fontWeight: isFloor ? 700 : 400}}>
+                            {f2(d.battKwh)}{isFloor ? " ⚠" : ""}
+                          </td>
+                          <td style={{padding:"7px 12px",fontWeight:700,color: d.battSOC < 25 ? "#ef4444" : d.battSOC > 95 ? "#22c55e" : "#60a5fa"}}>
+                            {f1(d.battSOC)}%
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{borderTop:"2px solid #1e3a5f"}}>
+                      <td style={{padding:"10px 12px",color:"#94a3b8",fontWeight:700}}>TOTAL</td>
+                      <td style={{padding:"10px 12px",color:"#fbbf24",fontWeight:700}}>{f2(data.reduce((s,d)=>s+d.pv,0))}</td>
+                      <td style={{padding:"10px 12px",color:"#e2e8f0",fontWeight:700}}>{f2(totalLoad)}</td>
+                      <td style={{padding:"10px 12px",color:"#f59e0b",fontWeight:700}}>{f2(totalPV)}</td>
+                      <td style={{padding:"10px 12px",color:"#60a5fa",fontWeight:700}}>{f2(totalBatt)}</td>
+                      <td style={{padding:"10px 12px",color: totalGrid>0.01?"#ef4444":"#1e3a5f",fontWeight:700}}>
+                        {totalGrid>0.01?f2(totalGrid):"—"}
+                      </td>
+                      <td style={{padding:"10px 12px",color:"#334155",fontWeight:700}}>{totalCurtailed>0.01?f2(totalCurtailed):"—"}</td>
+                      <td colSpan={2} style={{padding:"10px 12px",color:"#475569",fontSize:11}}>
+                        Cost: <span style={{color: gridCost<5?"#22c55e":"#ef4444",fontWeight:700}}>₱{f2(gridCost)}</span>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── APPLIANCES VIEW ── */}
+          {view === "appl" && (
+            <div style={{marginBottom:16}}>
+              {/* Load bar chart */}
+              <div style={{background:"#0d1b2e",borderRadius:12,padding:"16px",border:"1px solid #1e3a5f",marginBottom:12}}>
+                <div style={{fontSize:9,letterSpacing:2,color:"#475569",marginBottom:10,textTransform:"uppercase"}}>Hourly Load Profile (kWh)</div>
+                <div style={{display:"flex",alignItems:"flex-end",gap:2,height:64}}>
+                  {(loadMode==="heavy"?LOAD_HEAVY:LOAD_STD).map((v,h) => {
+                    const isDay = h>=6 && h<=17;
+                    return (
+                      <div key={h} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center"}}>
+                        <div style={{width:"100%",background: v>1.4?"#ef4444":v>0.9?"#f59e0b":isDay?"#3b82f6":"#1e3a5f",
+                          borderRadius:2,height:`${(v/2.1)*56}px`,minHeight:2,opacity: isDay?0.9:0.5}}/>
+                        {[0,6,12,18].includes(h) && <div style={{fontSize:8,color:"#334155",marginTop:2}}>{fmtH(h)}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Period totals */}
+              <div className="period-grid" style={{marginBottom:12}}>
+                {[
+                  {p:"Sleep",t:"10PM–6AM",kwh:"7.32",c:"#818cf8",note:"AC+fans+LEDs"},
+                  {p:"Morning",t:"6AM–12PM",kwh:"4.90",c:"#f59e0b",note:"AC+laptop+PC+rice"},
+                  {p:"Afternoon",t:"12PM–5PM",kwh:"3.83",c:"#60a5fa",note:"Gaming+fans"},
+                  {p:"Evening",t:"5PM–10PM",kwh:"3.52",c:"#c084fc",note:"TV+rice+LEDs"},
+                ].map((s,i)=>(
+                  <div key={i} style={{background:"#0d1b2e",borderRadius:10,padding:"12px",border:"1px solid #1e3a5f",borderTop:`3px solid ${s.c}`}}>
+                    <div style={{fontSize:10,color:"#64748b"}}>{s.p}</div>
+                    <div style={{fontSize:9,color:"#334155",marginBottom:6}}>{s.t}</div>
+                    <div style={{fontSize:22,fontWeight:800,color:s.c,lineHeight:1}}>{s.kwh}</div>
+                    <div style={{fontSize:9,color:"#334155",marginTop:4}}>{s.note}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Appliance list */}
+              <div style={{background:"#0d1b2e",borderRadius:12,padding:"16px",border:"1px solid #1e3a5f",marginBottom:12}}>
+                <div style={{fontSize:9,letterSpacing:2,color:"#475569",marginBottom:12,textTransform:"uppercase"}}>Appliance Reference</div>
+                {APPLIANCES.map((a,i) => {
+                  const isHeavy = a.name.includes("heavy") || a.name.includes("Kettle");
+                  const dim = isHeavy && loadMode === "standard";
+                  return (
+                    <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                      padding:"9px 0",borderBottom:"1px solid #0f2040",opacity: dim ? 0.25 : 1}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <div style={{width:3,height:14,borderRadius:2,background:TAG_C[a.tag]||"#6b7280",flexShrink:0}}/>
+                        <div>
+                          <div style={{fontSize:11,color:"#e2e8f0"}}>{a.name}</div>
+                          <div style={{fontSize:9,color:"#475569"}}>{a.hrs}</div>
+                        </div>
+                      </div>
+                      <div style={{textAlign:"right",marginLeft:8}}>
+                        <div style={{fontSize:12,fontWeight:700,color:TAG_C[a.tag]||"#6b7280"}}>{a.w}</div>
+                        <div style={{fontSize:9,color:"#334155"}}>{a.kwh} kWh/d</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Inverter trip limits */}
+              <div style={{background:"#0d1b2e",borderRadius:12,padding:"16px",border:"1px solid #1e3a5f",marginBottom:12}}>
+                <div style={{fontSize:9,letterSpacing:2,color:"#475569",marginBottom:12,textTransform:"uppercase"}}>Inverter Trip Limits (6kW max)</div>
+                {[
+                  ["B-corrected std baseline","~1.9 kW","PASS","#22c55e"],
+                  ["+ Rice cooker","~3.8 kW","PASS","#22c55e"],
+                  ["Heavy morning all-on","~3.5 kW","PASS","#f59e0b"],
+                  ["+ Kettle (1800W)","~5.6 kW","NEAR LIMIT","#f59e0b"],
+                  ["Kettle + microwave","~7.6 kW","⚠ TRIP","#ef4444"],
+                  ["Window AC + kettle","~6.9 kW","⚠ TRIP","#ef4444"],
+                ].map(([sc,kw,v,c],i)=>(
+                  <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                    padding:"8px 0",borderBottom:"1px solid #0f2040"}}>
+                    <div>
+                      <div style={{fontSize:11,color:"#94a3b8"}}>{sc}</div>
+                      <div style={{fontSize:10,color:"#475569"}}>{kw}</div>
+                    </div>
+                    <div style={{fontSize:11,fontWeight:700,color:c,whiteSpace:"nowrap",marginLeft:10}}>{v}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* All-scenarios summary */}
+              <div style={{background:"#0d1b2e",borderRadius:12,padding:"16px",border:"1px solid #1e3a5f"}}>
+                <div style={{fontSize:9,letterSpacing:2,color:"#475569",marginBottom:12,textTransform:"uppercase"}}>All-Scenario Summary</div>
+                {[
+                  ["Sunny + Standard","0.00 kWh grid","100% by 1PM","~5.0 kWh wasted","#22c55e"],
+                  ["Sunny + Heavy AM","~0.50 kWh grid","100% by 2PM","~3.5 kWh wasted","#f59e0b"],
+                  ["Average + Standard","~0.09 kWh grid","100% by 3PM","~0.5 kWh wasted","#22c55e"],
+                  ["Average + Heavy AM","~0.88 kWh grid","~93% sundown","~0 kWh wasted","#f59e0b"],
+                  ["Rainy + Full batt","~0.9 kWh grid","~80% sundown","Zero wasted","#f59e0b"],
+                  ["Rainy + 21% start","~12 kWh grid","Never full","All night = grid","#ef4444"],
+                ].map(([sc,grid,sd,waste,c],i)=>(
+                  <div key={i} style={{padding:"9px 0",borderBottom:"1px solid #0f2040"}}>
+                    <div style={{fontSize:12,color:c,fontWeight:600,marginBottom:3}}>{sc}</div>
+                    <div style={{fontSize:10,color:"#475569"}}>Grid: <span style={{color:"#94a3b8"}}>{grid}</span> · Sundown: <span style={{color:"#94a3b8"}}>{sd}</span></div>
+                    <div style={{fontSize:10,color:"#334155"}}>{waste}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── FOOTER ── */}
+          <div style={{fontSize:9,color:"#1e3a5f",textAlign:"center",paddingTop:8,paddingBottom:4,lineHeight:1.6}}>
+            Bimby Solar v3.6 · FICELCO ₱16.071/kWh May 2026 · SE15B 14.33kWh · 4.84kW effective<br/>
+            Bell-curve PV model · 95% charge efficiency · Simulation from 6AM→5AM
+          </div>
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<SolarStressTest />);
+  </script>
+</body>
+</html>
