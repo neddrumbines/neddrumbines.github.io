@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solarman Reference — Bimby's Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080d17;
+    --card: #0f1724;
+    --card2: #141e2e;
+    --border: #1e2d45;
+    --sun: #f97316;
+    --sun-dim: rgba(249,115,22,0.12);
+    --sun-glow: rgba(249,115,22,0.25);
+    --grid-col: #38bdf8;
+    --grid-dim: rgba(56,189,248,0.1);
+    --bat: #22c55e;
+    --bat-dim: rgba(34,197,94,0.1);
+    --warn: #f59e0b;
+    --warn-dim: rgba(245,158,11,0.1);
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,0.1);
+    --muted: #4a6080;
+    --text: #e2eaf5;
+    --subtext: #8ba3c4;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 0 0 40px;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(160deg, #0f1e36 0%, #0a1220 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 20px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(249,115,22,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--sun);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .header-sub {
+    margin-top: 6px;
+    color: var(--subtext);
+    font-size: 12px;
+  }
+  .spec-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 14px;
+  }
+  .pill {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--subtext);
+  }
+  .pill span { color: var(--text); }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 22px 20px 10px;
+  }
+
+  /* ELEMENT CARD */
+  .el-card {
+    margin: 0 16px 12px;
+    background: var(--card);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .el-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .el-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .el-icon.sun { background: var(--sun-dim); }
+  .el-icon.grid { background: var(--grid-dim); }
+  .el-icon.bat { background: var(--bat-dim); }
+  .el-icon.load { background: rgba(168,85,247,0.1); }
+  .el-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .el-pos {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-top: 2px;
+  }
+
+  /* DATA ROWS */
+  .data-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 16px;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+  }
+  .data-row:last-child { border-bottom: none; }
+  .row-label {
+    color: var(--subtext);
+    font-size: 12.5px;
+    flex: 1;
+  }
+  .row-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: right;
+  }
+  .row-unit {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-left: 3px;
+  }
+  .highlight { background: rgba(249,115,22,0.05); }
+
+  /* STATUS BADGE */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+  .badge-green { background: var(--bat-dim); color: var(--bat); }
+  .badge-orange { background: var(--sun-dim); color: var(--sun); }
+  .badge-blue { background: var(--grid-dim); color: var(--grid-col); }
+  .badge-warn { background: var(--warn-dim); color: var(--warn); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+
+  /* COLOR ACCENTS ON VALUES */
+  .v-sun { color: var(--sun); }
+  .v-grid { color: var(--grid-col); }
+  .v-bat { color: var(--bat); }
+  .v-warn { color: var(--warn); }
+  .v-red { color: var(--red); }
+  .v-purple { color: #a855f7; }
+
+  /* BATTERY TIMELINE */
+  .bat-timeline {
+    padding: 4px 0 8px;
+  }
+  .bat-row {
+    display: flex;
+    align-items: center;
+    padding: 7px 16px;
+    gap: 10px;
+    border-bottom: 1px solid rgba(30,45,69,0.4);
+  }
+  .bat-row:last-child { border-bottom: none; }
+  .bat-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    width: 72px;
+    flex-shrink: 0;
+  }
+  .bat-soc {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    width: 44px;
+    flex-shrink: 0;
+  }
+  .bat-bar-wrap {
+    flex: 1;
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .bat-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+  .bat-power {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* DIVIDER IN CARD */
+  .card-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0 16px;
+  }
+  .card-note {
+    padding: 10px 16px;
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .card-note strong { color: var(--subtext); }
+
+  /* CHECKLIST */
+  .check-card {
+    margin: 0 16px 12px;
+    background: var(--card);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 11px 16px;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+  }
+  .check-row:last-child { border-bottom: none; }
+  .check-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    width: 52px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .check-body { flex: 1; }
+  .check-label {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .check-good {
+    font-size: 11px;
+    color: var(--bat);
+    margin-top: 2px;
+  }
+  .check-flag {
+    font-size: 11px;
+    color: var(--warn);
+    margin-top: 1px;
+  }
+
+  /* RED FLAGS */
+  .flag-card {
+    margin: 0 16px 12px;
+    background: rgba(239,68,68,0.04);
+    border-radius: 14px;
+    border: 1px solid rgba(239,68,68,0.15);
+    overflow: hidden;
+  }
+  .flag-row {
+    display: flex;
+    gap: 10px;
+    padding: 11px 16px;
+    border-bottom: 1px solid rgba(239,68,68,0.08);
+    align-items: flex-start;
+  }
+  .flag-row:last-child { border-bottom: none; }
+  .flag-dot {
+    width: 6px; height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .flag-what { font-size: 12.5px; color: var(--text); font-weight: 500; }
+  .flag-why { font-size: 11.5px; color: var(--subtext); margin-top: 2px; }
+
+  /* DAILY TOTALS */
+  .totals-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+  .totals-cell {
+    background: var(--card);
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .totals-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .totals-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.1;
+  }
+  .totals-sub {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* TRIP WARNING */
+  .trip-card {
+    margin: 0 16px 12px;
+    background: rgba(245,158,11,0.05);
+    border-radius: 14px;
+    border: 1px solid rgba(245,158,11,0.2);
+    overflow: hidden;
+  }
+  .trip-header {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid rgba(245,158,11,0.1);
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--warn);
+  }
+  .trip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    border-bottom: 1px solid rgba(245,158,11,0.06);
+  }
+  .trip-row:last-child { border-bottom: none; }
+  .trip-label { font-size: 12.5px; color: var(--subtext); }
+  .trip-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+  }
+
+  /* FOOTER */
+  .footer {
+    margin: 24px 16px 0;
+    padding: 14px 16px;
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .footer strong { color: var(--subtext); }
+
+  /* GOLDEN RULE HIGHLIGHT */
+  .golden {
+    margin: 0 16px 12px;
+    background: linear-gradient(135deg, rgba(249,115,22,0.08), rgba(249,115,22,0.03));
+    border-radius: 14px;
+    border: 1px solid rgba(249,115,22,0.2);
+    padding: 16px;
+  }
+  .golden-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--sun);
+    margin-bottom: 10px;
+  }
+  .golden-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .golden-item:last-child { margin-bottom: 0; }
+  .golden-num {
+    width: 20px; height: 20px;
+    background: var(--sun);
+    border-radius: 50%;
+    color: #000;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .golden-text { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+  .golden-text strong { color: var(--sun); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-label">Solarman Reference Card</div>
+  <h1>Bimby's Solar<br>Monitor Guide</h1>
+  <div class="header-sub">Virac, Catanduanes · FICELCO grid</div>
+  <div class="spec-pills">
+    <div class="pill">10× <span>OSDA 580W</span> bifacial</div>
+    <div class="pill"><span>5.8 kWp</span> · 4.84 kW eff.</div>
+    <div class="pill">SRNE <span>HESP4860S100-H</span></div>
+    <div class="pill">SE15B <span>14.33 kWh</span> LFP</div>
+  </div>
+</div>
+
+<!-- SETUP NOTE -->
+<div class="section-title">⚠ First-time Setup</div>
+<div class="el-card" style="border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.04);">
+  <div class="data-row">
+    <div class="row-label">Solarman auto-detects battery capacity — it may show the wrong value</div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">Go to <strong>Plant Settings → Battery Capacity</strong></div>
+    <div class="row-val v-warn">14.33<span class="row-unit">kWh</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">SOC % will be wrong until you set this</div>
+    <div><span class="badge badge-warn">⚠ Do this first</span></div>
+  </div>
+</div>
+
+<!-- PRODUCTION -->
+<div class="section-title">☀ Production — top left box</div>
+<div class="el-card">
+  <div class="el-header">
+    <div class="el-icon sun">☀️</div>
+    <div>
+      <div class="el-title">Production</div>
+      <div class="el-pos">Top left · shows kW when large, W when small</div>
+    </div>
+  </div>
+  <div class="data-row highlight">
+    <div class="row-label">Before 7 AM</div>
+    <div class="row-val v-muted">0<span class="row-unit">W</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">7–8 AM (just waking up)</div>
+    <div class="row-val">300 – 800<span class="row-unit">W</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">8–9 AM</div>
+    <div class="row-val v-sun">1.50 – 2.50<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">9–10 AM</div>
+    <div class="row-val v-sun">2.50 – 3.80<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row highlight">
+    <div class="row-label" style="font-weight:500; color:var(--text);">10 AM – 2 PM ← peak window</div>
+    <div class="row-val v-sun" style="font-size:15px;">4.00 – 5.80<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">3 PM</div>
+    <div class="row-val v-sun">2.50 – 3.50<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">4 PM</div>
+    <div class="row-val">1.00 – 2.00<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">After 5 PM</div>
+    <div class="row-val" style="color:var(--muted);">→ 0<span class="row-unit">W</span></div>
+  </div>
+  <div class="card-divider"></div>
+  <div class="card-note">Nameplate is 5.8 kWp. Bifacial rear-gain on perfect clear noon can push close to <strong>6.0 kW</strong>. If it reads 0 past 9 AM on blue sky — restart inverter first, then call contractor.</div>
+</div>
+
+<!-- GRID -->
+<div class="section-title">⚡ Grid — top right box</div>
+<div class="el-card">
+  <div class="el-header">
+    <div class="el-icon grid">🗼</div>
+    <div>
+      <div class="el-title">Grid</div>
+      <div class="el-pos">Top right · "On grid" label · import from FICELCO</div>
+    </div>
+  </div>
+  <div class="data-row highlight">
+    <div class="row-label" style="font-weight:500; color:var(--text);">Clear sunny/average day ✅</div>
+    <div class="row-val v-bat">0 – 100<span class="row-unit">W</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">Like the reference screenshot (78 W) — this is noise, essentially zero</div>
+    <div><span class="badge badge-green">✓ Normal</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">Heavy daytime load (window AC + full house)</div>
+    <div class="row-val">100 – 500<span class="row-unit">W</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">Cloudy day, battery running low</div>
+    <div class="row-val v-warn">0.50 – 2.00<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">Rainy or storm day</div>
+    <div class="row-val v-warn">1.00 – 4.00<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">Night, battery near 20% floor</div>
+    <div class="row-val v-warn">0.50 – 2.00<span class="row-unit">kW</span></div>
+  </div>
+  <div class="card-divider"></div>
+  <div class="card-note">Once it starts showing <strong>kW values during daylight on a clear day</strong> — pay attention. W values are normal noise. kW imports during peak sun = something's off.</div>
+</div>
+
+<!-- BATTERY -->
+<div class="section-title">🔋 Battery — bottom left box</div>
+<div class="el-card">
+  <div class="el-header">
+    <div class="el-icon bat">🔋</div>
+    <div>
+      <div class="el-title">Battery</div>
+      <div class="el-pos">Bottom left · % SOC inside icon · power below (− = charging, + = discharging)</div>
+    </div>
+  </div>
+
+  <!-- Column headers -->
+  <div style="display:flex; align-items:center; gap:10px; padding:6px 16px; border-bottom:1px solid var(--border);">
+    <div style="width:72px; font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; flex-shrink:0;">TIME</div>
+    <div style="width:44px; font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; flex-shrink:0;">SOC %</div>
+    <div style="flex:1; font-size:10px; color:var(--muted); font-family:'DM Mono',monospace;">BAR</div>
+    <div style="width:80px; font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; text-align:right; flex-shrink:0;">POWER</div>
+  </div>
+
+  <div class="bat-timeline">
+    <div class="bat-row">
+      <div class="bat-time">6 AM</div>
+      <div class="bat-soc" style="color:var(--warn);">21%</div>
+      <div class="bat-bar-wrap"><div class="bat-bar" style="width:21%; background:var(--warn);"></div></div>
+      <div class="bat-power" style="color:var(--subtext);">+600–900 W</div>
+    </div>
+    <div class="bat-row">
+      <div class="bat-time">7:30 AM</div>
+      <div class="bat-soc" style="color:var(--warn);">25%↑</div>
+      <div class="bat-bar-wrap"><div class="bat-bar" style="width:25%; background:var(--warn);"></div></div>
+      <div class="bat-power" style="color:var(--bat);">−500–1,500 W</div>
+    </div>
+    <div class="bat-row" style="background:rgba(34,197,94,0.03);">
+      <div class="bat-time">9–10 AM</div>
+      <div class="bat-soc" style="color:var(--bat);">50–70%</div>
+      <div class="bat-bar-wrap"><div class="bat-bar" style="width:60%; background:var(--bat);"></div></div>
+      <div class="bat-power" style="color:var(--bat); font-weight:500;">−3,000–4,500 W</div>
+    </div>
+    <div class="bat-row" style="background:rgba(34,197,94,0.05);">
+      <div class="bat-time">~11 AM ☀</div>
+      <div class="bat-soc" style="color:var(--bat); font-weight:500;">100% ✓</div>
+      <div class="bat-bar-wrap"><div class="bat-bar" style="width:100%; background:var(--bat);"></div></div>
+      <div class="bat-power" style="color:var(--bat);">−50–200 W</div>
+    </div>
+    <div class="bat-row" style="background:rgba(34,197,94,0.03);">
+      <div class="bat-time">Midday</div>
+      <div class="bat-soc" style="color:var(--bat);">100%</div>
+      <div class="bat-bar-wrap"><div class="bat-bar" style="width:100%; background:var(--bat);"></div></div>
+      <div class="bat-power" style="color:var(--subtext);">trickle</div>
+    </div>
+    <div class="bat-row">
+      <div class="bat-time">5–10 PM</div>
+      <div class="bat-soc" style="color:var(--grid-col);">100→72%</div>
+      <div class="bat-bar-wrap"><div class="bat-bar" style="width:72%; background:var(--grid-col);"></div></div>
+      <div class="bat-power" style="color:var(--subtext);">+500–1,500 W</div>
+    </div>
+    <div class="bat-row">
+      <div class="bat-time">Midnight</div>
+      <div class="bat-soc" style="color:var(--subtext);">~50%</div>
+      <div class="bat-bar-wrap"><div class="bat-bar" style="width:50%; background:var(--muted);"></div></div>
+      <div class="bat-power" style="color:var(--subtext);">+900–1,100 W</div>
+    </div>
+    <div class="bat-row">
+      <div class="bat-time">6 AM next</div>
+      <div class="bat-soc" style="color:var(--warn);">21%</div>
+      <div class="bat-bar-wrap"><div class="bat-bar" style="width:21%; background:var(--warn);"></div></div>
+      <div class="bat-power" style="color:var(--subtext);">cycle resets</div>
+    </div>
+  </div>
+
+  <div class="card-divider"></div>
+  <div class="card-note">
+    Negative power = charging (morning). Positive = discharging (evening/night). The <strong>−103 W at 100%</strong> you saw in the screenshot is the trickle-maintain state — exactly what you want at midday. Battery hits 100% around <strong>10:30 AM (sunny)</strong> or <strong>12 PM (average)</strong> on a clear day.
+  </div>
+</div>
+
+<!-- UPS-LOAD + LOAD -->
+<div class="section-title">🏠 UPS-Load + Load — bottom boxes</div>
+<div class="el-card">
+  <div class="el-header">
+    <div class="el-icon load">🔌</div>
+    <div>
+      <div class="el-title">UPS-Load + Load</div>
+      <div class="el-pos">Bottom center + right · your total house consumption</div>
+    </div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">Overnight only (AC sleep + 7 fans + fridge)</div>
+    <div class="row-val v-purple">0.90 – 1.20<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">Morning (AC + laptop + fans, no PC yet)</div>
+    <div class="row-val v-purple">1.50 – 2.50<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row highlight">
+    <div class="row-label" style="font-weight:500; color:var(--text);">Full daytime B-corrected ← your normal</div>
+    <div class="row-val v-purple" style="font-size:15px;">2.50 – 3.10<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">+ Window AC added</div>
+    <div class="row-val v-purple">3.50 – 4.00<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">+ Kettle (1,800 W) briefly</div>
+    <div class="row-val v-warn">up to 5.50<span class="row-unit">kW</span></div>
+  </div>
+  <div class="data-row" style="background:rgba(239,68,68,0.05);">
+    <div class="row-label" style="color:var(--red);">⚠ Kettle + microwave at same time</div>
+    <div class="row-val v-red">~7.6<span class="row-unit">kW</span> TRIP</div>
+  </div>
+  <div class="data-row" style="background:rgba(239,68,68,0.05);">
+    <div class="row-label" style="color:var(--red);">⚠ Window AC + everything + kettle</div>
+    <div class="row-val v-red">~6.9<span class="row-unit">kW</span> TRIP</div>
+  </div>
+</div>
+
+<!-- INVERTER LOAD TRIP WARNING -->
+<div class="trip-card">
+  <div class="trip-header">⚡ Inverter trip threshold — 6 kW continuous</div>
+  <div class="trip-row">
+    <div class="trip-label">Normal B-corrected baseline</div>
+    <div class="trip-val v-bat">~3.1 kW ✓</div>
+  </div>
+  <div class="trip-row">
+    <div class="trip-label">+ Rice cooker boiling</div>
+    <div class="trip-val v-bat">~3.8 kW ✓</div>
+  </div>
+  <div class="trip-row">
+    <div class="trip-label">+ Kettle (1,800 W)</div>
+    <div class="trip-val v-warn">~5.6 kW ⚠ near limit</div>
+  </div>
+  <div class="trip-row">
+    <div class="trip-label">+ Microwave (2,000 W)</div>
+    <div class="trip-val v-warn">~5.8 kW ⚠ very near</div>
+  </div>
+  <div class="trip-row" style="background:rgba(239,68,68,0.05);">
+    <div class="trip-label" style="color:var(--red);">Kettle + microwave simultaneously</div>
+    <div class="trip-val v-red">~7.6 kW ✗ TRIP</div>
+  </div>
+  <div class="trip-row" style="background:rgba(239,68,68,0.05);">
+    <div class="trip-label" style="color:var(--red);">Window AC + full house + kettle</div>
+    <div class="trip-val v-red">~6.9 kW ✗ TRIP</div>
+  </div>
+</div>
+
+<!-- GOLDEN CHECKS -->
+<div class="section-title">★ Two Golden Daily Checks</div>
+<div class="golden">
+  <div class="golden-title">Build these as habits — everything else is secondary</div>
+  <div class="golden-item">
+    <div class="golden-num">1</div>
+    <div class="golden-text"><strong>6–7 AM — Sunrise SOC</strong><br>Should read 20–25%. Below 18% consistently = grid pulled overnight. Your B-corrected target floor is 21%.</div>
+  </div>
+  <div class="golden-item">
+    <div class="golden-num">2</div>
+    <div class="golden-text"><strong>5–6 PM — Sundown SOC</strong><br>Clear day → 100%. Cloudy → 55–60%. If a clearly sunny day shows below 90% at 5 PM = heavy load or system issue.</div>
+  </div>
+</div>
+
+<!-- DAILY CHECKLIST -->
+<div class="section-title">⏱ All-Clear Checklist</div>
+<div class="check-card">
+  <div class="check-row">
+    <div class="check-time">7 AM</div>
+    <div class="check-body">
+      <div class="check-label">Battery SOC</div>
+      <div class="check-good">✓ 20–25%</div>
+      <div class="check-flag">⚠ Below 18% = grid pulled overnight</div>
+    </div>
+  </div>
+  <div class="check-row">
+    <div class="check-time">10 AM</div>
+    <div class="check-body">
+      <div class="check-label">Production (clear sky)</div>
+      <div class="check-good">✓ 3,500 W or higher</div>
+      <div class="check-flag">⚠ Below 1,500 W on blue sky = issue</div>
+    </div>
+  </div>
+  <div class="check-row">
+    <div class="check-time">12 PM</div>
+    <div class="check-body">
+      <div class="check-label">Battery SOC (clear day)</div>
+      <div class="check-good">✓ 95–100%</div>
+      <div class="check-flag">⚠ Below 85% on clear day = heavy load or problem</div>
+    </div>
+  </div>
+  <div class="check-row">
+    <div class="check-time">3 PM</div>
+    <div class="check-body">
+      <div class="check-label">Grid import</div>
+      <div class="check-good">✓ 0–100 W (noise level)</div>
+      <div class="check-flag">⚠ Above 500 W on clear day = flag</div>
+    </div>
+  </div>
+  <div class="check-row">
+    <div class="check-time">6 PM</div>
+    <div class="check-body">
+      <div class="check-label">Sundown SOC</div>
+      <div class="check-good">✓ 100% clear · 55–60% cloudy</div>
+      <div class="check-flag">⚠ Below 80% on clear day</div>
+    </div>
+  </div>
+  <div class="check-row">
+    <div class="check-time">Next 7 AM</div>
+    <div class="check-body">
+      <div class="check-label">Battery SOC again</div>
+      <div class="check-good">✓ 20–25% = full clean cycle</div>
+      <div class="check-flag">⚠ Below 18% = overnight overdraw</div>
+    </div>
+  </div>
+</div>
+
+<!-- END OF DAY TOTALS -->
+<div class="section-title">📊 End-of-Day Totals (Data tab, 6–7 PM)</div>
+<div class="el-card" style="overflow:hidden;">
+  <!-- Row headers -->
+  <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; background:var(--card2);">
+    <div style="padding:8px 12px; font-size:10px; color:var(--muted); font-family:'DM Mono',monospace;"></div>
+    <div style="padding:8px 8px; font-size:10px; color:var(--sun); font-family:'DM Mono',monospace; text-align:center;">SUNNY</div>
+    <div style="padding:8px 8px; font-size:10px; color:var(--grid-col); font-family:'DM Mono',monospace; text-align:center;">AVG</div>
+    <div style="padding:8px 8px; font-size:10px; color:var(--muted); font-family:'DM Mono',monospace; text-align:center;">CLOUDY</div>
+  </div>
+  <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; border-top:1px solid var(--border);">
+    <div style="padding:10px 12px; font-size:12px; color:var(--subtext); border-bottom:1px solid var(--border);">PV Gen</div>
+    <div style="padding:10px 8px; font-family:'DM Mono',monospace; font-size:12px; color:var(--sun); text-align:center; border-bottom:1px solid var(--border);">24–27<br><span style="font-size:10px;color:var(--muted);">kWh</span></div>
+    <div style="padding:10px 8px; font-family:'DM Mono',monospace; font-size:12px; color:var(--grid-col); text-align:center; border-bottom:1px solid var(--border);">20–22<br><span style="font-size:10px;color:var(--muted);">kWh</span></div>
+    <div style="padding:10px 8px; font-family:'DM Mono',monospace; font-size:12px; color:var(--subtext); text-align:center; border-bottom:1px solid var(--border);">12–16<br><span style="font-size:10px;color:var(--muted);">kWh</span></div>
+  </div>
+  <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr;">
+    <div style="padding:10px 12px; font-size:12px; color:var(--subtext); border-bottom:1px solid var(--border);">Load</div>
+    <div style="padding:10px 8px; font-family:'DM Mono',monospace; font-size:12px; text-align:center; border-bottom:1px solid var(--border);">~19–20<br><span style="font-size:10px;color:var(--muted);">kWh</span></div>
+    <div style="padding:10px 8px; font-family:'DM Mono',monospace; font-size:12px; text-align:center; border-bottom:1px solid var(--border);">~19–20<br><span style="font-size:10px;color:var(--muted);">kWh</span></div>
+    <div style="padding:10px 8px; font-family:'DM Mono',monospace; font-size:12px; text-align:center; border-bottom:1px solid var(--border);">~19–20<br><span style="font-size:10px;color:var(--muted);">kWh</span></div>
+  </div>
+  <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr;">
+    <div style="padding:10px 12px; font-size:12px; color:var(--subtext);">Grid import</div>
+    <div style="padding:10px 8px; font-family:'DM Mono',monospace; font-size:12px; color:var(--bat); text-align:center;"><strong>0</strong><br><span style="font-size:10px;color:var(--muted);">kWh</span></div>
+    <div style="padding:10px 8px; font-family:'DM Mono',monospace; font-size:12px; color:var(--bat); text-align:center;">0–0.5<br><span style="font-size:10px;color:var(--muted);">kWh</span></div>
+    <div style="padding:10px 8px; font-family:'DM Mono',monospace; font-size:12px; color:var(--warn); text-align:center;">2–4<br><span style="font-size:10px;color:var(--muted);">kWh</span></div>
+  </div>
+  <div style="padding:6px 12px 10px; font-size:11px; color:var(--muted); border-top:1px solid var(--border);">
+    🚩 Grid import above <strong style="color:var(--warn);">3 kWh/day average over a week</strong> = revisit load discipline or +2 panels
+  </div>
+</div>
+
+<!-- RED FLAGS -->
+<div class="section-title">🚩 Red Flags — Act on These</div>
+<div class="flag-card">
+  <div class="flag-row">
+    <div class="flag-dot"></div>
+    <div>
+      <div class="flag-what">Production = 0 during daylight on clear sky</div>
+      <div class="flag-why">Inverter not waking up. Restart first, then call contractor if it persists.</div>
+    </div>
+  </div>
+  <div class="flag-row">
+    <div class="flag-dot"></div>
+    <div>
+      <div class="flag-what">Battery SOC stuck at same % all morning</div>
+      <div class="flag-why">BMS or WiFi comms glitch. Restart app and inverter.</div>
+    </div>
+  </div>
+  <div class="flag-row">
+    <div class="flag-dot"></div>
+    <div>
+      <div class="flag-what">Load shows 0 W at all times</div>
+      <div class="flag-why">Monitoring sensor issue only — not an electrical problem, but you're flying blind.</div>
+    </div>
+  </div>
+  <div class="flag-row">
+    <div class="flag-dot"></div>
+    <div>
+      <div class="flag-what">Grid import 1–2 kW sustained on a clear day</div>
+      <div class="flag-why">Panel underperformance or you're overloading at that moment. Check what's running.</div>
+    </div>
+  </div>
+  <div class="flag-row">
+    <div class="flag-dot"></div>
+    <div>
+      <div class="flag-what">Daily PV Gen consistently 15–18 kWh on sunny days</div>
+      <div class="flag-why">Panel soiling, partial shading, or a string issue. Clean panels and inspect connections.</div>
+    </div>
+  </div>
+  <div class="flag-row">
+    <div class="flag-dot"></div>
+    <div>
+      <div class="flag-what">Sunrise SOC below 18% three days in a row</div>
+      <div class="flag-why">Overnight loads consistently exceeding battery. Reduce fans/LEDs overnight or plan for +2 panels in year 2.</div>
+    </div>
+  </div>
+</div>
+
+<!-- DISCIPLINE SAVINGS -->
+<div class="section-title">💡 Free Savings — Operational Discipline</div>
+<div class="el-card">
+  <div class="data-row">
+    <div class="row-label">Turn off 4 LED bulbs at sleep time</div>
+    <div class="row-val v-bat">~₱100<span class="row-unit">/mo</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">Reduce overnight fans from 5 → 3</div>
+    <div class="row-val v-bat">~₱270<span class="row-unit">/mo</span></div>
+  </div>
+  <div class="data-row">
+    <div class="row-label">AC at 26°C overnight (not 24°C)</div>
+    <div class="row-val v-bat">~₱155<span class="row-unit">/mo</span></div>
+  </div>
+  <div class="data-row highlight">
+    <div class="row-label" style="font-weight:500; color:var(--text);">All three combined — zero cost</div>
+    <div class="row-val v-sun" style="font-size:15px;">~₱525<span class="row-unit">/mo</span></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <strong>System:</strong> 10× OSDA ODA580-36 MHD bifacial · SRNE HESP4860S100-H · SR-SE15B 14.33 kWh LFP<br>
+  <strong>Inverter SN:</strong> SR-2604010382-2000831050-T01<br>
+  <strong>Battery SN:</strong> SR260206TF38B0402000004J001421<br>
+  <strong>Residual bill target:</strong> ~₱614/mo (B-corrected, post-rate-hike) · 86% reduction<br>
+  <strong>Payback:</strong> 7.56 years · v3.10 — May 14, 2026
+</div>
+
+</body>
+</html>
